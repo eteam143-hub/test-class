@@ -1,9 +1,24 @@
 import os
 import gradio as gr
+from google import genai
+from dotenv import load_dotenv
+
+load_dotenv()
+
+client = genai.Client()
+
+
+def generate_text(input_str: str):
+    interaction = client.interactions.create(
+        model="gemini-3.5-flash",
+        input=input_str,
+    )
+    return f"## {input_str}\n\n{interaction.output_text}"
+
 
 with gr.Blocks(title="Zero-shot Text Generation") as demo:
     gr.Markdown("# Zero-shot Text Generation (Interactions API)")
-    
+
     input_text = gr.Textbox(
         label="Prompt",
         placeholder="請輸入問題...",
@@ -21,9 +36,8 @@ with gr.Blocks(title="Zero-shot Text Generation") as demo:
         )
     output_text = gr.Markdown()
 
-    @input_text.submit(inputs=input_text, outputs=[input_text, output_text])
-    def generate_text(input_str: str):
-        
-        return None, f"## {input_str}\n\n"
+    @input_text.submit(inputs=input_text, outputs=output_text)
+    def handle_submit(input_str: str):
+        return generate_text(input_str)
 
 demo.launch()
