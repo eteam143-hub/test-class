@@ -12,7 +12,7 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("👋 你好！我是串接 Gemini 3.7 Flash 的 Telegram AI 助理，請隨時向我提問！")
+    await update.message.reply_text("👋 你好！我是串接 Gemini 3.6 Flash 的 Telegram AI 助理，請隨時向我提問！")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
