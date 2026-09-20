@@ -1,5 +1,5 @@
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, JSONResponse
 import uvicorn
 
 app = FastAPI()
@@ -50,6 +50,19 @@ async def read_root():
     </html>
     """
     return html_content
+
+@app.post("/webhook")
+async def line_webhook(request: Request):
+    """
+    LINE Webhook 專用節點
+    接收 LINE 的 webhook 請求並回傳 status ok
+    """
+    # 可以在這裡取得 LINE 傳來的資料(如果需要的話)
+    # body = await request.json()
+    # print(f"收到 webhook 資料: {body}")
+    
+    # 回傳 status ok 給 LINE 伺服器
+    return JSONResponse(content={"status": "ok"}, status_code=200)
 
 if __name__ == "__main__":
     # 使用 port 8000 - 不需要 root 權限
