@@ -19,6 +19,7 @@ ROM_DIR = os.path.join(BASE_DIR, "roms")
 LOG_FILE = os.path.join(BASE_DIR, "launcher.log")
 CFG_TEMPLATE = os.path.join(BASE_DIR, "mednafen.cfg")
 SNAKE_SCRIPT = os.path.join(BASE_DIR, "snake.py")
+FISHFALL_SCRIPT = os.path.join(BASE_DIR, "fishfall.py")
 MEDNAFEN_HOME = os.path.expanduser("~/.mednafen")
 MEDNAFEN_CFG = os.path.join(MEDNAFEN_HOME, "mednafen.cfg")
 
@@ -68,6 +69,10 @@ T = {
     "esc_back_en": "Press ESC in-game to return here",
     "play_keys": "遊戲按鍵:方向鍵移動　Z=B　X=A　Enter=開始　Tab=選擇",
     "play_keys_en": "Game keys: arrows move  Z=B  X=A  Enter=Start  Tab=Select",
+    "snake_keys": "貪食蛇按鍵:方向鍵或 W/A/S/D 移動　Enter/Space 暫停",
+    "snake_keys_en": "Snake: arrows or W/A/S/D move  Enter/Space pauses",
+    "fishfall_keys": "魚兒墜落按鍵:←→ 或 A/D 移動小船　Enter/Space 暫停",
+    "fishfall_keys_en": "Fishfall: Left/Right or A/D moves  Enter/Space pauses",
     "fail_title": "遊戲啟動失敗!原因如下:",
     "fail_title_en": "Failed to launch! Reason:",
     "any_key": "按任意鍵回到選單",
@@ -167,6 +172,16 @@ def game_title(game):
     if find_cjk_font_path():
         return GAME_TITLES.get(filename, filename)
     return filename
+
+
+def game_controls(game):
+    """回傳各遊戲在啟動前顯示的實際控制方式。"""
+    filename = os.path.basename(game)
+    if filename == "Snake.nes":
+        return T2("snake_keys")
+    if filename == "Fishfall.nes":
+        return T2("fishfall_keys")
+    return T2("play_keys")
 
 
 def ensure_mednafen_config():
@@ -367,7 +382,7 @@ def wait_launch(screen, font_small, game):
     screen.blit(overlay, (0, 0))
     msg = font_small.render(T2("launching") + game_title(game), True, (255, 255, 255))
     screen.blit(msg, msg.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 44)))
-    keys = font_small.render(T2("play_keys"), True, (150, 220, 150))
+    keys = font_small.render(game_controls(game), True, (150, 220, 150))
     screen.blit(keys, keys.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2)))
     msg2 = font_small.render(T2("esc_back"), True, (220, 220, 220))
     screen.blit(msg2, msg2.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 44)))
@@ -401,10 +416,37 @@ def launch_local_snake(size):
     return None
 
 
+def launch_local_fishfall(size):
+    """啟動內建的魚兒墜落；結束後恢復選單視窗。"""
+    if not os.path.exists(FISHFALL_SCRIPT):
+        return "找不到內建魚兒墜落程式 fishfall.py"
+
+    pygame.quit()
+    try:
+        proc = subprocess.run([sys.executable, FISHFALL_SCRIPT])
+    except OSError as exc:
+        return f"無法啟動魚兒墜落:\n{exc}"
+
+    try:
+        pygame.display.init()
+        pygame.display.set_mode(size)
+        pygame.display.set_caption("NES 任天堂復古遊戲機")
+    except pygame.error as exc:
+        log(f"重開 pygame 顯示失敗: {exc}")
+
+    if proc.returncode:
+        message = f"魚兒墜落異常結束(returncode={proc.returncode})"
+        log(message)
+        return message
+    return None
+
+
 def launch_game(game, size):
     """啟動 mednafen 跑指定 ROM。成功回傳 None,失敗回傳錯誤說明。"""
     if os.path.basename(game) == "Snake.nes":
         return launch_local_snake(size)
+    if os.path.basename(game) == "Fishfall.nes":
+        return launch_local_fishfall(size)
 
     mednafen = shutil.which("mednafen")
     if not mednafen:
